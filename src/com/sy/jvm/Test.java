@@ -2,6 +2,7 @@ package com.sy.jvm;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
+import java.util.concurrent.*;
 
 /**
  * @author ShenYong
@@ -19,16 +20,22 @@ public class Test {
     private static PhantomReference<String> reference;
 
     public static void main(String[] args) {
-        String str = new String("abc");
-        ReferenceQueue refQueue = new ReferenceQueue();
-        reference = new PhantomReference<String>(str, refQueue);
-//        WeakReference<String> reference = new WeakReference<String>(str, refQueue);
-        str = null;
-//        System.out.println("reference.get after set null:" + reference.get());
-        System.out.println("refQueue.poll before gc:" + refQueue.poll());
-        System.gc();
-        System.out.println("reference.get after gc:" + reference.get());
-        System.out.println("refQueue.poll after gc:" + refQueue.poll());
-//        String s = reference.get();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(1, 2, 0, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(2), new ThreadPoolExecutor.CallerRunsPolicy());
+        System.out.println("调用线程：" + Thread.currentThread().getName());
+        for (int i = 1; i <= 10; i++) {
+            int finalI = i;
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    System.out.println("线程 " + Thread.currentThread().getName() + " 在执行任务 " + finalI);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
     }
 }
